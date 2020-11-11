@@ -1,0 +1,17 @@
+[package]
+name = "dominant-color"
+description = "A simple python package that calculate the dominent color of an image"
+version = "0.1.0"
+authors = ["baptiste0928 <contact@baptiste0928.net>"]
+edition = "2018"
+
+[lib]
+name = "dominant_color"
+crate-type = ["cdylib"]
+
+[dependencies]
+image = "0.23.11"
+
+[dependencies.pyo3]
+version = "0.12.3"
+features = ["extension-module"]
