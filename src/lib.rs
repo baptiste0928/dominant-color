@@ -2,9 +2,9 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use colorsys::{Hsl, Rgb};
-use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
+use pyo3::{create_exception, wrap_pyfunction};
 
 create_exception!(dominant_color, ConversionError, PyException);
 
@@ -29,7 +29,7 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     // Open image from bytes
     let img = match image::load_from_memory(buffer) {
         Ok(img) => img,
-        Err(_) => return Err(ConversionError::new_err("Unable to convert image"))
+        Err(_) => return Err(ConversionError::new_err("Unable to convert image")),
     };
 
     // Get pixels as a vector
@@ -44,14 +44,17 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
 
     let bytes_per_pixel = if has_alpha { 4 } else { 3 };
     let pixel_count = pixels.len() / bytes_per_pixel;
+    let step = (pixel_count / 50_000).max(1); // Analyze at most 50k pixels
 
     let mut buckets: HashMap<usize, Bucket> = HashMap::new();
 
     // Iterate over pixels
-    for i in 0..pixel_count {
+    for i in (0..pixel_count).step_by(step) {
         let r = pixels[i * bytes_per_pixel];
         let g = pixels[i * bytes_per_pixel + 1];
         let b = pixels[i * bytes_per_pixel + 2];
+
+        // Convert rgb to hsl
         let hsl: Hsl = Rgb::from((r, g, b)).into();
 
         // Alpha value is used for weighting
@@ -61,9 +64,11 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
             1.0
         };
 
+        // Clustering using hue
         let cluster = (hsl.get_hue() as usize) >> 3;
 
-        buckets.entry(cluster)
+        buckets
+            .entry(cluster)
             .and_modify(|e| {
                 e.h += hsl.get_hue() * alpha;
                 e.s += hsl.get_saturation() * alpha;
@@ -79,9 +84,7 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     }
 
     // Sort buckets
-    let mut sorted_buckets: Vec<Bucket> = buckets.into_iter()
-        .map(|(_, b)| b)
-        .collect();
+    let mut sorted_buckets: Vec<Bucket> = buckets.into_iter().map(|(_, b)| b).collect();
     sorted_buckets.sort_by(|a, b| b.count.partial_cmp(&a.count).unwrap_or(Ordering::Equal));
 
     // Calculate average of dominant bucket
@@ -90,9 +93,12 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
         s: sorted_buckets[0].s / sorted_buckets[0].count,
         l: sorted_buckets[0].l / sorted_buckets[0].count,
         count: 1_f64,
-    }.get_rgb();
+    }
+    .get_rgb();
 
-    Ok((dominant_bucket.get_red() as usize) << 16 | (dominant_bucket.get_green() as usize) << 8 | dominant_bucket.get_blue() as usize)
+    Ok((dominant_bucket.get_red() as usize) << 16
+        | (dominant_bucket.get_green() as usize) << 8
+        | dominant_bucket.get_blue() as usize)
 }
 
 #[pymodule]
