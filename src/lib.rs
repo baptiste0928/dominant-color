@@ -1,15 +1,25 @@
-use std::collections::hash_map::RandomState;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use image;
-use pyo3::wrap_pyfunction;
+use colorsys::{Hsl, Rgb};
+use pyo3::{create_exception, wrap_pyfunction};
+use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
+create_exception!(dominant_color, ConversionError, PyException);
+
 struct Bucket {
-    r: f64,
-    g: f64,
-    b: f64,
+    h: f64,
+    s: f64,
+    l: f64,
     count: f64,
+}
+
+impl Bucket {
+    fn get_rgb(&self) -> Rgb {
+        let rgb: Rgb = Hsl::from((self.h, self.s, self.l)).into();
+        rgb
+    }
 }
 
 /// Calculate the dominant color from an image (as a bytes object)
@@ -17,7 +27,10 @@ struct Bucket {
 #[text_signature = "(buffer, /)"]
 fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     // Open image from bytes
-    let img = image::load_from_memory(buffer).unwrap();
+    let img = match image::load_from_memory(buffer) {
+        Ok(img) => img,
+        Err(_) => return Err(ConversionError::new_err("Unable to convert image"))
+    };
 
     // Get pixels as a vector
     let pixels = img.to_bytes();
@@ -32,13 +45,14 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     let bytes_per_pixel = if has_alpha { 4 } else { 3 };
     let pixel_count = pixels.len() / bytes_per_pixel;
 
-    let mut buckets: HashMap<[u8; 3], Bucket, RandomState> = HashMap::new();
+    let mut buckets: HashMap<usize, Bucket> = HashMap::new();
 
     // Iterate over pixels
     for i in 0..pixel_count {
         let r = pixels[i * bytes_per_pixel];
         let g = pixels[i * bytes_per_pixel + 1];
         let b = pixels[i * bytes_per_pixel + 2];
+        let hsl: Hsl = Rgb::from((r, g, b)).into();
 
         // Alpha value is used for weighting
         let alpha = if has_alpha {
@@ -47,47 +61,44 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
             1.0
         };
 
-        let cluster = [(r >> 6), (g >> 6), (b >> 6)];
+        let cluster = (hsl.get_hue() as usize) >> 3;
 
         buckets.entry(cluster)
             .and_modify(|e| {
-                e.r += r as f64 * alpha;
-                e.g += g as f64 * alpha;
-                e.b += b as f64 * alpha;
+                e.h += hsl.get_hue() * alpha;
+                e.s += hsl.get_saturation() * alpha;
+                e.l += hsl.get_lightness() * alpha;
                 e.count += alpha;
             })
             .or_insert(Bucket {
-                r: r as f64 * alpha,
-                g: g as f64 * alpha,
-                b: b as f64 * alpha,
+                h: hsl.get_hue() * alpha,
+                s: hsl.get_saturation() * alpha,
+                l: hsl.get_lightness() * alpha,
                 count: alpha,
             });
     }
 
-    // Calculate average of each bucket
-    let mut buckets_averages = Vec::new();
+    // Sort buckets
+    let mut sorted_buckets: Vec<Bucket> = buckets.into_iter()
+        .map(|(_, b)| b)
+        .collect();
+    sorted_buckets.sort_by(|a, b| b.count.partial_cmp(&a.count).unwrap_or(Ordering::Equal));
 
-    for (_cluster, bucket) in &buckets {
-        if bucket.count > 0.0 {
-            buckets_averages.push(Bucket {
-                r: bucket.r / bucket.count,
-                g: bucket.g / bucket.count,
-                b: bucket.b / bucket.count,
-                count: bucket.count,
-            })
-        }
-    }
+    // Calculate average of dominant bucket
+    let dominant_bucket = Bucket {
+        h: sorted_buckets[0].h / sorted_buckets[0].count,
+        s: sorted_buckets[0].s / sorted_buckets[0].count,
+        l: sorted_buckets[0].l / sorted_buckets[0].count,
+        count: 1_f64,
+    }.get_rgb();
 
-    // Sort buckets averages
-    buckets_averages.sort_by(|a, b| a.count.partial_cmp(&b.count).unwrap());
-    let dominant_bucket = &buckets_averages[0];
-
-    Ok((dominant_bucket.r as usize) << 16 | (dominant_bucket.g as usize) << 8 | dominant_bucket.b as usize)
+    Ok((dominant_bucket.get_red() as usize) << 16 | (dominant_bucket.get_green() as usize) << 8 | dominant_bucket.get_blue() as usize)
 }
 
 #[pymodule]
-fn dominant_color(_py: Python, m: &PyModule) -> PyResult<()> {
+fn dominant_color(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_dominant_color, m)?)?;
+    m.add("ConversionError", py.get_type::<ConversionError>())?;
 
     Ok(())
 }

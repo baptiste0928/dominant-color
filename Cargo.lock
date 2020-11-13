@@ -64,6 +64,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
+name = "colorsys"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "525a63f1f8a5b83cf626405c95646cd5024ed639a946063311a12ea9a2efb7b6"
+
+[[package]]
 name = "const_fn"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -149,6 +155,7 @@ dependencies = [
 name = "dominant-color"
 version = "0.1.0"
 dependencies = [
+ "colorsys",
  "image",
  "pyo3",
 ]
