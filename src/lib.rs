@@ -36,11 +36,10 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     let pixels = img.to_bytes();
 
     // Check if image has alpha
-    let has_alpha = match img.color() {
-        image::ColorType::Rgba8 => true,
-        image::ColorType::Bgra8 => true,
-        _ => false,
-    };
+    let has_alpha = matches!(
+        img.color(),
+        image::ColorType::Rgba8 | image::ColorType::Bgra8
+    );
 
     let bytes_per_pixel = if has_alpha { 4 } else { 3 };
     let pixel_count = pixels.len() / bytes_per_pixel;
@@ -49,20 +48,15 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     let mut buckets: HashMap<usize, Bucket> = HashMap::new();
 
     // Iterate over pixels
-    for i in (0..pixel_count).step_by(step) {
-        let r = pixels[i * bytes_per_pixel];
-        let g = pixels[i * bytes_per_pixel + 1];
-        let b = pixels[i * bytes_per_pixel + 2];
+    for pixel in pixels.windows(bytes_per_pixel).step_by(step) {
+        let (r, g, b, a) = match *pixel {
+            [r, g, b, a] => (r, g, b, a as f64 / 255.0),
+            [r, g, b] => (r, g, b, 1.0),
+            _ => unreachable!(),
+        };
 
         // Convert rgb to hsl
         let hsl: Hsl = Rgb::from((r, g, b)).into();
-
-        // Alpha value is used for weighting
-        let alpha = if has_alpha {
-            pixels[i * bytes_per_pixel + 3] as f64 / 255.0
-        } else {
-            1.0
-        };
 
         // Clustering using hue
         let cluster = (hsl.get_hue() as usize) >> 3;
@@ -70,21 +64,21 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
         buckets
             .entry(cluster)
             .and_modify(|e| {
-                e.h += hsl.get_hue() * alpha;
-                e.s += hsl.get_saturation() * alpha;
-                e.l += hsl.get_lightness() * alpha;
-                e.count += alpha;
+                e.h += hsl.get_hue() * a;
+                e.s += hsl.get_saturation() * a;
+                e.l += hsl.get_lightness() * a;
+                e.count += a;
             })
             .or_insert(Bucket {
-                h: hsl.get_hue() * alpha,
-                s: hsl.get_saturation() * alpha,
-                l: hsl.get_lightness() * alpha,
-                count: alpha,
+                h: hsl.get_hue() * a,
+                s: hsl.get_saturation() * a,
+                l: hsl.get_lightness() * a,
+                count: a,
             });
     }
 
     // Sort buckets
-    let mut sorted_buckets: Vec<Bucket> = buckets.into_iter().map(|(_, b)| b).collect();
+    let mut sorted_buckets: Vec<_> = buckets.into_iter().map(|(_, b)| b).collect();
     sorted_buckets.sort_by(|a, b| b.count.partial_cmp(&a.count).unwrap_or(Ordering::Equal));
 
     // Calculate average of dominant bucket
