@@ -2,9 +2,9 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use colorsys::{Hsl, Rgb};
+use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
-use pyo3::{create_exception, wrap_pyfunction};
 
 create_exception!(dominant_color, DecodingError, PyException);
 

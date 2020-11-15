@@ -1,9 +1,15 @@
 [package]
 name = "dominant-color"
-description = "A simple python package that calculate the dominent color of an image"
-version = "0.1.0"
+version = "1.0.0"
+description = "Fast & minimal python module to compute the dominant color of an image, written in Rust."
+readme = "README.md"
 authors = ["baptiste0928 <contact@baptiste0928.net>"]
+repository = "https://github.com/baptiste0928/dominant-color"
+license = "MIT"
 edition = "2018"
+
+[package.metadata.maturin]
+classifier = ["License :: OSI Approved :: MIT License", "Programming Language :: Rust", "Topic :: Multimedia :: Graphics"]
 
 [lib]
 name = "dominant_color"
