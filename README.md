@@ -1,6 +1,11 @@
 # dominant-color 🔖
 *Fast & minimal python module to compute the dominant color of an image, written in Rust.*
 
+[![](https://img.shields.io/pypi/v/dominantcolor)](https://pypi.org/project/dominantcolor/)
+[![](https://img.shields.io/pypi/format/dominantcolor)](https://pypi.org/project/dominantcolor/)
+[![](https://img.shields.io/pypi/l/dominantcolor)](https://github.com/baptiste0928/dominant-color/blob/main/LICENSE)
+
+
 ## Usage
 
 Pre-compiled binaries are **available for Linux** using pip :
