@@ -38,6 +38,16 @@ If image decoding failed, an `dominantcolor.DecodingError` exception is raised.
 Internally, the module compute the HSL value of each pixel (max. 50k) and classifies each pixel using its hue.
 The average of the biggest group of pixels is returned.
 
+## Benchmarks
+
+In order to know how fast this module is, I performed some tests on my computer (with an Intel Core i5 9300H).
+The tests were performed with [timeit](https://docs.python.org/3/library/timeit.html) and the given value is **an average over 1000 executions**.
+
+- [80x67 PNGA](https://pixabay.com/vectors/logo-bird-vector-swinging-design-1933884/) : `1.65 ms`
+- [148x100 PNG](https://pixabay.com/illustrations/yoga-sunrise-silhouette-dawn-woman-5508336/) : `2.72 ms`
+- [640x430 JPEG](https://unsplash.com/photos/93zqOgDn89U) : `24.74 ms`
+- [2400x3600 JPEG](https://unsplash.com/photos/CyMNPopAFNY) : `123.66 ms`
+
 ## Build-it yourself
 
 Before you start, ensure [Rust is installed](https://www.rust-lang.org/tools/install) on your computer.
