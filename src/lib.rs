@@ -6,7 +6,7 @@ use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
 
-create_exception!(dominant_color, ConversionError, PyException);
+create_exception!(dominant_color, DecodingError, PyException);
 
 struct Bucket {
     h: f64,
@@ -22,14 +22,22 @@ impl Bucket {
     }
 }
 
-/// Calculate the dominant color from an image (as a bytes object)
+/// Calculates the dominant color of an image.
+///
+/// The dominant color is computed using HSL value of each pixel. Each pixel is classified using
+/// its hue, and the average value of the biggest group of pixels is returned as an int.
+/// The image must be as raw bytes. It will be decoded during processing.
+///
+/// :param bytes buffer: The image from which to calculate the dominant color.
+/// :return int: The dominant color of the image.
+/// :raises .ConversionError: Failed to decode buffer
 #[pyfunction]
 #[text_signature = "(buffer, /)"]
 fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
     // Open image from bytes
     let img = match image::load_from_memory(buffer) {
         Ok(img) => img,
-        Err(_) => return Err(ConversionError::new_err("Unable to convert image")),
+        Err(_) => return Err(DecodingError::new_err("Failed to decode buffer")),
     };
 
     // Get pixels as a vector
@@ -98,7 +106,7 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
 #[pymodule]
 fn dominant_color(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_dominant_color, m)?)?;
-    m.add("ConversionError", py.get_type::<ConversionError>())?;
+    m.add("DecodingError", py.get_type::<DecodingError>())?;
 
     Ok(())
 }
