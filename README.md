@@ -5,7 +5,7 @@
 
 Pre-compiled binaries are **available for Linux** using pip :
 ```
-pip install dominant-color
+pip install dominantcolor
 ```
 
 Alternatively, you can download wheel directly from [releases](https://github.com/baptiste0928/dominant-color/releases/latest), or build it yourself.
@@ -13,7 +13,7 @@ Alternatively, you can download wheel directly from [releases](https://github.co
 This module is **written in Rust**, so it's faster than a pure-python module. Usage is very intuitive :
 
 ```python
-from dominant_color import get_dominant_color
+from dominantcolor import get_dominant_color
 
 # Let's open an image as bytes object.
 # This is just for the example, you can use any bytes object that
@@ -28,7 +28,7 @@ color = get_dominant_color(img)
 print(hex(color))
 ```
 
-If image decoding failed, an `dominant_color.DecodingError` exception is raised.
+If image decoding failed, an `dominantcolor.DecodingError` exception is raised.
 
 Internally, the module compute the HSL value of each pixel (max. 50k) and classifies each pixel using its hue.
 The average of the biggest group of pixels is returned.
@@ -56,7 +56,7 @@ $ maturin build --release
 ```
 
 Python package (as wheel) can be found at `dominant-color/target/wheels/`.
-It can be installed for any project with `pip install dominant_color[...].whl`.
+It can be installed for any project with `pip install dominantcolor[...].whl`.
 
 ## Contributing
 

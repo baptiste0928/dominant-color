@@ -1,5 +1,5 @@
 [package]
-name = "dominant-color"
+name = "dominantcolor"
 version = "1.0.0"
 description = "Fast & minimal python module to compute the dominant color of an image, written in Rust."
 readme = "README.md"
@@ -12,7 +12,7 @@ edition = "2018"
 classifier = ["License :: OSI Approved :: MIT License", "Programming Language :: Rust", "Topic :: Multimedia :: Graphics"]
 
 [lib]
-name = "dominant_color"
+name = "dominantcolor"
 crate-type = ["cdylib"]
 
 [dependencies]

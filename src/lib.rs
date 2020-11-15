@@ -6,7 +6,7 @@ use pyo3::{create_exception, wrap_pyfunction};
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
-create_exception!(dominant_color, DecodingError, PyException);
+create_exception!(dominantcolor, DecodingError, PyException);
 
 struct Bucket {
     h: f64,
@@ -104,7 +104,7 @@ fn get_dominant_color(buffer: &[u8]) -> PyResult<usize> {
 }
 
 #[pymodule]
-fn dominant_color(py: Python, m: &PyModule) -> PyResult<()> {
+fn dominantcolor(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_dominant_color, m)?)?;
     m.add("DecodingError", py.get_type::<DecodingError>())?;
 

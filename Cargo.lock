@@ -152,7 +152,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dominant-color"
+name = "dominantcolor"
 version = "1.0.0"
 dependencies = [
  "colorsys",
